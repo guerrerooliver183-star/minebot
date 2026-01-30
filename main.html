@@ -47,6 +47,7 @@
         background-color: #0056b3;
       }
     </style>
+
     <script src="/socket.io/socket.io.js"></script>
     <script>
       const socket = io();
@@ -56,15 +57,27 @@
         statusElement.innerText = msg;
       });
 
-      // Function to automatically start the bot when the page loads for the first time
+      // Auto-start when page loads
       function autoStartBot() {
         socket.emit('control_bot', 'start');
       }
-
-      // Trigger the autoStartBot function when the page loads
       window.onload = autoStartBot;
+
+      // Missing functions added here:
+      function startBot() {
+        socket.emit('control_bot', 'start');
+      }
+
+      function stopBot() {
+        socket.emit('control_bot', 'stop');
+      }
+
+      function reconnectBot() {
+        socket.emit('control_bot', 'reconnect');
+      }
     </script>
   </head>
+
   <body>
     <div class="container">
       <h1>Welcome to the Main Page!</h1>
