@@ -5,7 +5,7 @@
     <title>Main Page</title>
 
     <!-- Manifest del PWA -->
-    <link rel="manifest" href="PWA/manifest.json">
+    <link rel="manifest" href="/manifest.json">
 
     <!-- Fuente Orbitron -->
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
@@ -161,7 +161,7 @@
     <!-- Registro del Service Worker -->
     <script>
       if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.register("/PWA/sw.js");
+        navigator.serviceWorker.register("/sw.js");
       }
     </script>
 
