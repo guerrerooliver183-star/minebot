@@ -4,13 +4,15 @@ const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const path = require('path');
 
-const mc = require('minecraft-protocol');
+const mineflayer = require('mineflayer');
+
 const serverHost = 'oliver-guerrero.aternos.me';
 const serverPort = 51021;
 const botUsername = '.Spectator';
-const reconnectInterval = 1 * 40 * 1000;
+const reconnectInterval = 1 * 40 * 1000; // 40 segundos
 
 let bot = null;
+let moveInterval = null;
 
 // Servir archivos estáticos (incluye main.html)
 app.use(express.static(__dirname));
@@ -34,6 +36,7 @@ io.on('connection', (socket) => {
 
       case 'stop':
         if (bot) {
+          clearMovement();
           bot.end();
           bot = null;
           console.log('Bot stopped.');
@@ -42,11 +45,10 @@ io.on('connection', (socket) => {
         break;
 
       case 'reconnect':
-        if (bot) {
-          bot.end();
-        }
         console.log('Reconnecting bot...');
         io.emit('bot_status', 'Reconnecting bot...');
+        clearMovement();
+        if (bot) bot.end();
         setTimeout(() => {
           bot = createBot();
         }, 1000);
@@ -65,42 +67,73 @@ http.listen(PORT, () => {
   console.log(`Servidor funcionando en el puerto ${PORT}`);
 });
 
-// Crear bot
+// Crear bot con Mineflayer
 function createBot() {
-  const bot = mc.createClient({
+  const newBot = mineflayer.createBot({
     host: serverHost,
     port: serverPort,
-    username: botUsername,
+    username: botUsername
   });
 
-  bot.on('login', () => {
-    console.log(`Bot ${bot.username} logged in!`);
-    io.emit('bot_status', `Bot ${bot.username} logged in!`);
+  newBot.on('login', () => {
+    console.log(`Bot ${newBot.username} logged in!`);
+    io.emit('bot_status', `Bot ${newBot.username} logged in!`);
   });
 
-  bot.on('end', () => {
-    console.log(`Bot ${bot.username} disconnected. Reconnecting in ${reconnectInterval / 1000} seconds.`);
+  newBot.on('spawn', () => {
+    console.log(`Bot ${newBot.username} spawned!`);
+    io.emit('bot_status', `Bot ${newBot.username} spawned!`);
+
+    // Movimiento aleatorio cada 8 segundos
+    clearMovement();
+    moveInterval = setInterval(() => {
+      if (!bot) return;
+
+      // Rotación aleatoria
+      const yaw = Math.random() * Math.PI * 2;
+      const pitch = (Math.random() - 0.5) * Math.PI / 2;
+      bot.look(yaw, pitch, true);
+
+      // Movimiento aleatorio
+      const moves = ['forward', 'back', 'left', 'right', 'jump'];
+      const move = moves[Math.floor(Math.random() * moves.length)];
+
+      bot.setControlState(move, true);
+
+      // Detener movimiento después de 500 ms
+      setTimeout(() => {
+        if (bot) bot.setControlState(move, false);
+      }, 500);
+
+    }, 8000); // cada 8 segundos
+  });
+
+  newBot.on('end', () => {
+    console.log(`Bot ${newBot.username} disconnected. Reconnecting in ${reconnectInterval / 1000} seconds.`);
     io.emit('bot_status', `Bot disconnected. Reconnecting soon...`);
     handleDisconnection();
   });
 
-  bot.on('error', (err) => {
-    console.error(`Bot ${bot.username} encountered an error:`, err);
+  newBot.on('error', (err) => {
+    console.error(`Bot ${newBot.username} encountered an error:`, err);
+    io.emit('bot_status', `Bot error: ${err.message}`);
     handleDisconnection();
   });
 
-  // Keep alive
-  setInterval(() => {
-    if (bot) {
-      bot.write('keep_alive', { keepAliveId: 4337 });
-    }
-  }, 10000);
+  return newBot;
+}
 
-  return bot;
+// Limpiar intervalo de movimiento
+function clearMovement() {
+  if (moveInterval) {
+    clearInterval(moveInterval);
+    moveInterval = null;
+  }
 }
 
 // Reconexión automática
 function handleDisconnection() {
+  clearMovement();
   bot = null;
   setTimeout(() => {
     if (!bot) {
