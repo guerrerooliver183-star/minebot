@@ -10,42 +10,48 @@ const serverPort = 51021;
 const botUsername = '.Spectator';
 const reconnectInterval = 1 * 40 * 1000;
 
-let bot = null; // Initialize the bot as null
+let bot = null;
 
-app.use(express.static(path.join(__dirname, '')));
+// Servir archivos estáticos (incluye main.html)
+app.use(express.static(__dirname));
 
-app.get('/', function(req, res) {
+// Página principal
+app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'main.html'));
 });
 
-io.on('connection', function(socket) {
-  console.log('a user connected');
+// WebSockets
+io.on('connection', (socket) => {
+  console.log('A user connected');
 
-  socket.on('control_bot', function(command) {
+  socket.on('control_bot', (command) => {
     switch (command) {
       case 'start':
         if (!bot) {
-          bot = createBot(); // Start the bot only if it's not already running
+          bot = createBot();
         }
         break;
+
       case 'stop':
         if (bot) {
-          bot.end(); // Gracefully disconnect the bot
-          bot = null; // Reset bot to null since it's no longer running
+          bot.end();
+          bot = null;
           console.log('Bot stopped.');
           io.emit('bot_status', 'Bot stopped.');
         }
         break;
+
       case 'reconnect':
         if (bot) {
-          bot.end(); // Gracefully disconnect the bot before reconnecting
+          bot.end();
         }
         console.log('Reconnecting bot...');
         io.emit('bot_status', 'Reconnecting bot...');
         setTimeout(() => {
-          bot = createBot(); // Reconnect the bot after a short delay
+          bot = createBot();
         }, 1000);
         break;
+
       default:
         console.log('Unknown command.');
         break;
@@ -53,10 +59,13 @@ io.on('connection', function(socket) {
   });
 });
 
-http.listen(3000, function() {
-  console.log('Example app listening on port 3000!');
+// Render necesita un puerto dinámico
+const PORT = process.env.PORT || 3000;
+http.listen(PORT, () => {
+  console.log(`Servidor funcionando en el puerto ${PORT}`);
 });
 
+// Crear bot
 function createBot() {
   const bot = mc.createClient({
     host: serverHost,
@@ -70,8 +79,8 @@ function createBot() {
   });
 
   bot.on('end', () => {
-    console.log(`Bot ${bot.username} disconnected from the server. Reconnecting in ${reconnectInterval / 1000} seconds.`);
-    io.emit('bot_status', `Bot ${bot.username} disconnected from the server. Reconnecting in ${reconnectInterval / 1000} seconds.`);
+    console.log(`Bot ${bot.username} disconnected. Reconnecting in ${reconnectInterval / 1000} seconds.`);
+    io.emit('bot_status', `Bot disconnected. Reconnecting soon...`);
     handleDisconnection();
   });
 
@@ -80,6 +89,7 @@ function createBot() {
     handleDisconnection();
   });
 
+  // Keep alive
   setInterval(() => {
     if (bot) {
       bot.write('keep_alive', { keepAliveId: 4337 });
@@ -89,11 +99,12 @@ function createBot() {
   return bot;
 }
 
+// Reconexión automática
 function handleDisconnection() {
-  bot = null; // Reset bot to null since it's no longer connected
+  bot = null;
   setTimeout(() => {
     if (!bot) {
-      bot = createBot(); // Reconnect the bot after a short delay
+      bot = createBot();
     }
   }, reconnectInterval);
 }
