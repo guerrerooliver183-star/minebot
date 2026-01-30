@@ -1,54 +1,121 @@
 <!DOCTYPE html>
-<html>
-  <head>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
     <title>Main Page</title>
+
+    <!-- Fuente Orbitron -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- ESTILO NEÓN COMPLETO (styles.css incrustado) -->
     <style>
-      body {
-        font-family: Arial, sans-serif;
-        background-color: #f0f0f0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        margin: 0;
-      }
+        :root {
+          --neon-blue: #00f0ff;
+          --neon-pink: #ff00ff;
+          --neon-green: #39ff14;
+          --neon-red: #ff073a;
+          --disabled-gray: #444;
+          --neon-purple: #b000ff;
+        }
 
-      .container {
-        text-align: center;
-        background-color: #ffffff;
-        border: 1px solid #e1e1e1;
-        border-radius: 8px;
-        padding: 20px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      }
+        body {
+          margin: 0;
+          background: #050505;
+          font-family: 'Orbitron', sans-serif;
+          text-align: center;
+          color: var(--neon-blue);
+          overflow-x: hidden;
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
 
-      h1 {
-        color: #007bff;
-        margin-bottom: 20px;
-      }
+        h1 { 
+          font-size: 3em; 
+          color: var(--neon-blue); 
+          text-shadow: 0 0 5px var(--neon-blue), 0 0 20px var(--neon-blue);
+          margin: 20px 0;
+          animation: flicker 2s infinite alternate, glowPulse 3s infinite alternate;
+        }
 
-      h2 {
-        color: #555555;
-      }
+        @keyframes glowPulse {
+          from { text-shadow: 0 0 5px var(--neon-blue), 0 0 10px var(--neon-blue); }
+          to { text-shadow: 0 0 20px var(--neon-blue), 0 0 40px var(--neon-pink); }
+        }
 
-      button {
-        margin: 5px;
-        padding: 10px 20px;
-        font-size: 16px;
-        cursor: pointer;
-        background-color: #007bff;
-        color: #ffffff;
-        border: none;
-        border-radius: 4px;
-        transition: background-color 0.2s ease-in-out;
-      }
+        @keyframes flicker {
+          0%, 18%, 22%, 25%, 53%, 57%, 100% { opacity: 1; }
+          20%, 24%, 55% { opacity: 0.7; }
+        }
 
-      button:hover {
-        background-color: #0056b3;
-      }
+        .game-container {
+          position: relative;
+          padding: 40px;
+          margin-top: 20px;
+          background: rgba(0, 0, 0, 0.8);
+          border-radius: 20px;
+          z-index: 1;
+          overflow: hidden;
+          width: 80%;
+          max-width: 400px;
+        }
+
+        .game-container::before {
+          content: '';
+          position: absolute;
+          top: -50%; left: -50%; width: 200%; height: 200%;
+          background: conic-gradient(transparent, var(--neon-blue), var(--neon-pink), transparent 30%);
+          animation: rotateBorder 4s linear infinite;
+          z-index: -2;
+        }
+
+        .game-container::after {
+          content: '';
+          position: absolute;
+          inset: 4px;
+          background: #050505;
+          border-radius: 16px;
+          z-index: -1;
+        }
+
+        @keyframes rotateBorder {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+
+        button {
+          padding: 15px 30px;
+          font-size: 18px;
+          margin: 10px;
+          background: transparent;
+          color: var(--neon-blue);
+          border: 2px solid var(--neon-blue);
+          border-radius: 5px;
+          cursor: pointer;
+          font-family: 'Orbitron';
+          font-weight: bold;
+          box-shadow: 0 0 15px var(--neon-blue);
+          transition: 0.3s;
+          width: 100%;
+        }
+
+        button:hover:not(:disabled) {
+          background: var(--neon-blue);
+          color: #000;
+          box-shadow: 0 0 40px var(--neon-blue);
+          transform: scale(1.05);
+        }
+
+        h2 {
+          color: var(--neon-blue);
+          text-shadow: 0 0 10px var(--neon-blue);
+        }
     </style>
 
+    <!-- Socket.IO -->
     <script src="/socket.io/socket.io.js"></script>
+
     <script>
       const socket = io();
 
@@ -57,13 +124,11 @@
         statusElement.innerText = msg;
       });
 
-      // Auto-start when page loads
       function autoStartBot() {
         socket.emit('control_bot', 'start');
       }
       window.onload = autoStartBot;
 
-      // Missing functions added here:
       function startBot() {
         socket.emit('control_bot', 'start');
       }
@@ -76,16 +141,19 @@
         socket.emit('control_bot', 'reconnect');
       }
     </script>
-  </head>
+</head>
 
-  <body>
-    <div class="container">
-      <h1>Welcome to the Main Page!</h1>
-      <h2 id="botStatus"></h2>
+<body>
 
-      <button onclick="startBot()">Start Bot</button>
-      <button onclick="stopBot()">Stop Bot</button>
-      <button onclick="reconnectBot()">Reconnect Bot</button>
+    <h1>Welcome to the Main Page!</h1>
+
+    <div class="game-container">
+        <h2 id="botStatus"></h2>
+
+        <button onclick="startBot()">Start Bot</button>
+        <button onclick="stopBot()">Stop Bot</button>
+        <button onclick="reconnectBot()">Reconnect Bot</button>
     </div>
-  </body>
+
+</body>
 </html>
