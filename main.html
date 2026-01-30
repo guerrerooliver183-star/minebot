@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <title>Main Page</title>
 
+    <!-- Manifest del PWA -->
+    <link rel="manifest" href="PWA/manifest.json">
+
     <!-- Fuente Orbitron -->
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 
@@ -154,6 +157,13 @@
         <button onclick="stopBot()">Stop Bot</button>
         <button onclick="reconnectBot()">Reconnect Bot</button>
     </div>
+
+    <!-- Registro del Service Worker -->
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/PWA/sw.js");
+      }
+    </script>
 
 </body>
 </html>
