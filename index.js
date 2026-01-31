@@ -9,7 +9,7 @@ const mineflayer = require('mineflayer');
 const serverHost = 'oliver-guerrero.aternos.me';
 const serverPort = 51021;
 const botUsername = '.Spectator';
-const reconnectInterval = 1 * 40 * 1000; // 40 segundos
+const reconnectInterval = 1 * 60 * 1000; // 🔹 60 segundos, reconexión más segura
 
 let bot = null;
 let moveInterval = null;
@@ -21,6 +21,9 @@ app.use(express.static(__dirname));
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'main.html'));
 });
+
+// Endpoint para UptimeRobot
+app.get('/ping', (req, res) => res.send('pong'));
 
 // WebSockets
 io.on('connection', (socket) => {
@@ -67,12 +70,15 @@ http.listen(PORT, () => {
   console.log(`Servidor funcionando en el puerto ${PORT}`);
 });
 
-// Crear bot con Mineflayer
+// Crear bot con Mineflayer (configuración crítica corregida)
 function createBot() {
   bot = mineflayer.createBot({
     host: serverHost,
     port: serverPort,
-    username: botUsername
+    username: botUsername,
+    version: "1.21.1",  // 🔹 versión real del protocolo PaperMC 1.21.11
+    onlineMode: false,   // 🔹 cracked
+    family: 4            // 🔹 fuerza IPv4 para Aternos
   });
 
   bot.on('login', () => {
@@ -89,23 +95,18 @@ function createBot() {
     moveInterval = setInterval(() => {
       if (!bot) return;
 
-      // Rotación aleatoria
       const yaw = Math.random() * Math.PI * 2;
       const pitch = (Math.random() - 0.5) * Math.PI / 2;
       bot.look(yaw, pitch, true);
 
-      // Movimiento aleatorio
       const moves = ['forward', 'back', 'left', 'right', 'jump'];
       const move = moves[Math.floor(Math.random() * moves.length)];
 
       bot.setControlState(move, true);
-
-      // Detener movimiento después de 500 ms
       setTimeout(() => {
         if (bot) bot.setControlState(move, false);
       }, 500);
-
-    }, 8000); // cada 8 segundos
+    }, 8000);
   });
 
   bot.on('end', () => {
