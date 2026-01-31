@@ -69,20 +69,20 @@ http.listen(PORT, () => {
 
 // Crear bot con Mineflayer
 function createBot() {
-  const newBot = mineflayer.createBot({
+  bot = mineflayer.createBot({
     host: serverHost,
     port: serverPort,
     username: botUsername
   });
 
-  newBot.on('login', () => {
-    console.log(`Bot ${newBot.username} logged in!`);
-    io.emit('bot_status', `Bot ${newBot.username} logged in!`);
+  bot.on('login', () => {
+    console.log(`Bot ${bot.username} logged in!`);
+    io.emit('bot_status', `Bot ${bot.username} logged in!`);
   });
 
-  newBot.on('spawn', () => {
-    console.log(`Bot ${newBot.username} spawned!`);
-    io.emit('bot_status', `Bot ${newBot.username} spawned!`);
+  bot.on('spawn', () => {
+    console.log(`Bot ${bot.username} spawned!`);
+    io.emit('bot_status', `Bot ${bot.username} spawned!`);
 
     // Movimiento aleatorio cada 8 segundos
     clearMovement();
@@ -108,19 +108,19 @@ function createBot() {
     }, 8000); // cada 8 segundos
   });
 
-  newBot.on('end', () => {
-    console.log(`Bot ${newBot.username} disconnected. Reconnecting in ${reconnectInterval / 1000} seconds.`);
+  bot.on('end', () => {
+    console.log(`Bot ${bot.username} disconnected. Reconnecting in ${reconnectInterval / 1000} seconds.`);
     io.emit('bot_status', `Bot disconnected. Reconnecting soon...`);
     handleDisconnection();
   });
 
-  newBot.on('error', (err) => {
-    console.error(`Bot ${newBot.username} encountered an error:`, err);
+  bot.on('error', (err) => {
+    console.error(`Bot ${bot.username} encountered an error:`, err);
     io.emit('bot_status', `Bot error: ${err.message}`);
     handleDisconnection();
   });
 
-  return newBot;
+  return bot;
 }
 
 // Limpiar intervalo de movimiento
