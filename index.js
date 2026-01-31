@@ -18,7 +18,7 @@ const AutoAuth = require('mineflayer-auto-auth');
 // ---------------------------
 const serverHost = "oliver-guerrero.aternos.me";
 const serverPort = 56096;
-const botUsername = "Spectator";
+const botUsername = ".Spectator";
 const autoAuthPassword = "bot112022";
 const reconnectDelay = 10000; // 10 segundos
 
