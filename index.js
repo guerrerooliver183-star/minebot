@@ -34,18 +34,17 @@ app.get("/", (req, res) => {
 });
 
 // ---------------------------
-// FUNCIONES DE LOG
+// ENVIAR LOGS AL HTML
 // ---------------------------
-function log(msg) {
+function sendLog(msg) {
   console.log(msg);
-  io.emit("bot_log", msg); // Enviar al HTML en tiempo real
+  io.emit("bot_status", msg); // Esto actualiza el <h2 id="botStatus">
 }
 
 // ---------------------------
-// SOCKET.IO (bot control desde HTML)
-// ---------------------------
+// SOCKET.IO (control desde botones)
 io.on("connection", (socket) => {
-  log("Usuario conectado al panel web");
+  sendLog("Usuario conectado al panel web");
 
   socket.on("control_bot", (command) => {
     switch(command) {
@@ -56,32 +55,30 @@ io.on("connection", (socket) => {
         if (bot) {
           bot.end();
           bot = null;
-          log("Bot detenido manualmente");
+          sendLog("Bot detenido manualmente");
         }
         break;
       case "reconnect":
         if (bot) bot.end();
         setTimeout(createBot, 1000);
-        log("Reconectando bot...");
+        sendLog("Reconectando bot...");
         break;
       default:
-        log("Comando desconocido: " + command);
+        sendLog("Comando desconocido: " + command);
         break;
     }
   });
 });
 
 // ---------------------------
-// LEVANTAR EL SERVIDOR EN RENDER
-// ---------------------------
+// LEVANTAR EL SERVIDOR
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => {
-  log(`Servidor web corriendo en puerto ${PORT}`);
+  sendLog(`Servidor web corriendo en puerto ${PORT}`);
 });
 
 // ---------------------------
-// CREAR EL BOT DE MINECRAFT
-// ---------------------------
+// CREAR EL BOT
 function createBot() {
   bot = mineflayer.createBot({
     host: serverHost,
@@ -96,9 +93,6 @@ function createBot() {
   bot.loadPlugin(armorManager);
   bot.loadPlugin(pathfinder);
 
-  // ---------------------------
-  // FUNCIÓN ANTI-AFK
-  // ---------------------------
   function randomSpectatorMovement() {
     const actions = [
       () => bot.setControlState('forward', true),
@@ -117,13 +111,21 @@ function createBot() {
   }
 
   bot.on("spawn", () => {
-    log("Bot conectado y listo (anti-AFK activado)");
+    sendLog("Bot conectado y listo (anti-AFK activado)");
     setInterval(randomSpectatorMovement, 8000);
   });
 
   // ---------------------------
-  // COMBATE Y GUARDIA
-  // ---------------------------
+  // GUARDIA Y COMBATE
+  let guardPos = null;
+  function guardArea(pos) { guardPos = pos.clone(); if (!bot.pvp.target) moveToGuardPos(); }
+  function stopGuarding() { guardPos = null; bot.pvp.stop(); bot.pathfinder.setGoal(null); }
+  function moveToGuardPos() {
+    const mcData = require('minecraft-data')(bot.version);
+    bot.pathfinder.setMovements(new Movements(bot, mcData));
+    bot.pathfinder.setGoal(new goals.GoalBlock(guardPos.x, guardPos.y, guardPos.z));
+  }
+
   bot.on('playerCollect', (collector) => {
     if (collector !== bot.entity) return;
     setTimeout(() => {
@@ -135,22 +137,6 @@ function createBot() {
       if (shield) bot.equip(shield, 'off-hand');
     }, 250);
   });
-
-  let guardPos = null;
-  function guardArea(pos) {
-    guardPos = pos.clone();
-    if (!bot.pvp.target) moveToGuardPos();
-  }
-  function stopGuarding() {
-    guardPos = null;
-    bot.pvp.stop();
-    bot.pathfinder.setGoal(null);
-  }
-  function moveToGuardPos() {
-    const mcData = require('minecraft-data')(bot.version);
-    bot.pathfinder.setMovements(new Movements(bot, mcData));
-    bot.pathfinder.setGoal(new goals.GoalBlock(guardPos.x, guardPos.y, guardPos.z));
-  }
 
   bot.on('stoppedAttacking', () => { if (guardPos) moveToGuardPos(); });
 
@@ -170,29 +156,20 @@ function createBot() {
   bot.on('chat', (username, message) => {
     const player = bot.players[username];
     if (!player || !player.entity) return;
-
-    if (message === 'guard') {
-      bot.chat('Guarding this area');
-      guardArea(player.entity.position);
-    }
-    if (message === 'stop') {
-      bot.chat('Stopping guard mode');
-      stopGuarding();
-    }
+    if (message === 'guard') { bot.chat('Guarding this area'); guardArea(player.entity.position); }
+    if (message === 'stop') { bot.chat('Stopping guard mode'); stopGuarding(); }
   });
 
   // ---------------------------
-  // MANEJO DE ERRORES Y RECONEXIÓN
-  // ---------------------------
-  bot.on('kicked', (reason) => log("Kicked: " + reason));
-  bot.on('error', (err) => log("Error: " + err));
+  // ERRORES Y RECONEXIÓN
+  bot.on('kicked', (reason) => sendLog("Kicked: " + reason));
+  bot.on('error', (err) => sendLog("Error: " + err));
   bot.on('end', () => {
-    log("Bot desconectado. Reconectando en 10 segundos...");
+    sendLog("Bot desconectado. Reconectando en 10 segundos...");
     setTimeout(createBot, reconnectDelay);
   });
 }
 
 // ---------------------------
 // INICIAR EL BOT
-// ---------------------------
 createBot();
