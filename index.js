@@ -7,7 +7,7 @@ const path = require('path');
 const mineflayer = require('mineflayer');
 
 const serverHost = 'oliver-guerrero.aternos.me';
-const serverPort = 51021;
+const serverPort = 56096;
 const botUsername = '.Spectator';
 const reconnectInterval = 1 * 60 * 1000; // 🔹 60 segundos, reconexión más segura
 
